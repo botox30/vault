@@ -1,5 +1,22 @@
 import { z } from 'zod';
-import { insertUserSchema, users } from './schema';
+import { insertUserSchema } from './schema';
+
+const userResponseSchema = z.object({
+  id: z.string().uuid(),
+  username: z.string(),
+  email: z.string().nullable(),
+});
+
+const registerInputSchema = insertUserSchema
+  .pick({ email: true, username: true, password: true })
+  .extend({
+    email: z.string().email(),
+  });
+
+const authResponseSchema = z.object({
+  token: z.string(),
+  user: userResponseSchema,
+});
 
 export const errorSchemas = {
   validation: z.object({
@@ -19,9 +36,9 @@ export const api = {
     register: {
       method: 'POST' as const,
       path: '/api/register',
-      input: insertUserSchema,
+      input: registerInputSchema,
       responses: {
-        201: z.custom<typeof users.$inferSelect>(),
+        201: authResponseSchema,
         400: errorSchemas.validation,
         409: errorSchemas.conflict,
       },
@@ -31,7 +48,7 @@ export const api = {
       path: '/api/login',
       input: z.object({ username: z.string(), password: z.string() }),
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: authResponseSchema,
         401: z.object({ message: z.string() }),
       },
     },
@@ -39,15 +56,26 @@ export const api = {
       method: 'POST' as const,
       path: '/api/logout',
       responses: {
-        200: z.void(),
+        200: z.object({ message: z.string() }),
       },
     },
     me: {
       method: 'GET' as const,
       path: '/api/user',
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: userResponseSchema,
         401: z.void(),
+      },
+    },
+    search: {
+      method: 'GET' as const,
+      path: '/api/users/search',
+      responses: {
+        200: z.object({
+          id: z.string().uuid(),
+          username: z.string(),
+        }),
+        404: errorSchemas.notFound,
       },
     },
   },
@@ -84,7 +112,7 @@ export const api = {
       responses: {
         200: z.array(z.object({
           id: z.number(),
-          friend: z.object({ id: z.number(), username: z.string() })
+          friend: z.object({ id: z.string().uuid(), username: z.string() })
         })),
       },
     },
@@ -94,22 +122,7 @@ export const api = {
       responses: {
         200: z.array(z.object({
           id: z.number(),
-          fromUser: z.object({ id: z.number(), username: z.string() }),
-          createdAt: z.string().or(z.date()).nullable()
-        })),
-      },
-    },
-  },
-  messages: {
-    history: {
-      method: 'GET' as const,
-      path: '/api/messages/:friendId',
-      responses: {
-        200: z.array(z.object({
-          id: z.number(),
-          fromUserId: z.number(),
-          toUserId: z.number(),
-          content: z.string(),
+          fromUser: z.object({ id: z.string().uuid(), username: z.string() }),
           createdAt: z.string().or(z.date()).nullable()
         })),
       },

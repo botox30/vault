@@ -29,7 +29,7 @@ export default function Dashboard() {
   const { friends, requests, sendRequest, acceptRequest, rejectRequest } = useFriends();
   const { messages, sendMessage, connected } = useChat();
   
-  const [selectedFriendId, setSelectedFriendId] = useState<number | null>(null);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [addFriendInput, setAddFriendInput] = useState("");
   const [activeTab, setActiveTab] = useState<"friends" | "pending">("friends");

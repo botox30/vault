@@ -1,25 +1,28 @@
 import { useState, useEffect, useRef } from "react";
 import { type WSMessage } from "@shared/schema";
 import { useAuth } from "./use-auth";
+import { getToken } from "@/lib/auth";
 
 export interface ChatMessage {
   id: string; // generated locally for list keys
-  fromUserId: number;
+  fromUserId: string;
   text: string;
   timestamp: Date;
 }
 
 export function useChat() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Record<number, ChatMessage[]>>({});
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!user) return;
+    const token = getToken();
+    if (!token) return;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
     
     wsRef.current = new WebSocket(wsUrl);
 
@@ -38,7 +41,7 @@ export function useChat() {
         const message = JSON.parse(event.data) as WSMessage;
         
         if (message.type === "message") {
-          const { fromUserId, toUserId, text } = message.payload;
+          const { fromUserId, toUserId, ciphertext } = message.payload;
           
           // If I sent it, add to my view of that friend (toUserId)
           // If I received it, add to my view of sender (fromUserId)
@@ -47,7 +50,7 @@ export function useChat() {
           const newMsg: ChatMessage = {
             id: crypto.randomUUID(),
             fromUserId,
-            text,
+            text: ciphertext,
             timestamp: new Date(),
           };
 
@@ -66,11 +69,11 @@ export function useChat() {
     };
   }, [user]);
 
-  const sendMessage = (toUserId: number, text: string) => {
+  const sendMessage = (toUserId: string, text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && user) {
       const payload = {
         type: "message",
-        payload: { toUserId, text }
+        payload: { toUserId, ciphertext: text }
       };
       wsRef.current.send(JSON.stringify(payload));
       

@@ -9,28 +9,28 @@ import {
 import { eq, or, and } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  createFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest>;
+  createFriendRequest(fromUserId: string, toUserId: string): Promise<FriendRequest>;
   getFriendRequest(id: number): Promise<FriendRequest | undefined>;
-  getFriendRequests(userId: number): Promise<(FriendRequest & { fromUser: User })[]>;
-  getExistingFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest | undefined>;
+  getFriendRequests(userId: string): Promise<(FriendRequest & { fromUser: User })[]>;
+  getExistingFriendRequest(fromUserId: string, toUserId: string): Promise<FriendRequest | undefined>;
   
   acceptFriendRequest(requestId: number): Promise<void>;
   rejectFriendRequest(requestId: number): Promise<void>;
   
-  getFriends(userId: number): Promise<(Friend & { friend: User })[]>;
-  isFriend(userId1: number, userId2: number): Promise<boolean>;
+  getFriends(userId: string): Promise<(Friend & { friend: User })[]>;
+  isFriend(userId1: string, userId2: string): Promise<boolean>;
 
   // Messages
-  saveMessage(fromUserId: number, toUserId: number, content: string): Promise<Message>;
-  getMessageHistory(userId1: number, userId2: number): Promise<Message[]>;
+  saveMessage(fromUserId: string, toUserId: string, content: string): Promise<Message>;
+  getMessageHistory(userId1: string, userId2: string): Promise<Message[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -45,7 +45,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest> {
+  async createFriendRequest(fromUserId: string, toUserId: string): Promise<FriendRequest> {
     const [request] = await db.insert(friendRequests)
       .values({ fromUserId, toUserId, status: "pending" })
       .returning();
@@ -57,7 +57,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-  async getExistingFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest | undefined> {
+  async getExistingFriendRequest(fromUserId: string, toUserId: string): Promise<FriendRequest | undefined> {
     const [request] = await db.select().from(friendRequests)
       .where(
         or(
@@ -68,7 +68,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-  async getFriendRequests(userId: number): Promise<(FriendRequest & { fromUser: User })[]> {
+  async getFriendRequests(userId: string): Promise<(FriendRequest & { fromUser: User })[]> {
     const results = await db.select({
       request: friendRequests,
       fromUser: users,
@@ -97,7 +97,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(friendRequests).where(eq(friendRequests.id, requestId));
   }
 
-  async getFriends(userId: number): Promise<(Friend & { friend: User })[]> {
+  async getFriends(userId: string): Promise<(Friend & { friend: User })[]> {
     const results = await db.select({
       friendship: friends,
       user: users,
@@ -109,20 +109,20 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.friendship, friend: r.user }));
   }
 
-  async isFriend(userId1: number, userId2: number): Promise<boolean> {
+  async isFriend(userId1: string, userId2: string): Promise<boolean> {
     const [friendship] = await db.select().from(friends)
       .where(and(eq(friends.userId, userId1), eq(friends.friendId, userId2)));
     return !!friendship;
   }
 
-  async saveMessage(fromUserId: number, toUserId: number, content: string): Promise<Message> {
+  async saveMessage(fromUserId: string, toUserId: string, content: string): Promise<Message> {
     const [message] = await db.insert(messages)
       .values({ fromUserId, toUserId, content })
       .returning();
     return message;
   }
 
-  async getMessageHistory(userId1: number, userId2: number): Promise<Message[]> {
+  async getMessageHistory(userId1: string, userId2: string): Promise<Message[]> {
     return await db.select()
       .from(messages)
       .where(

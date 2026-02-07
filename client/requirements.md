@@ -4,4 +4,4 @@ date-fns | Formatting timestamps
 
 ## Notes
 WebSocket connection required at /ws for real-time chat
-Auth uses cookie-based sessions (credentials: "include")
+Auth uses JWT in localStorage and Authorization: Bearer headers
