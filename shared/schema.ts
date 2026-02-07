@@ -87,5 +87,5 @@ export type MessageResponse = Message;
 
 // WebSocket message types
 export type WSMessage = 
-  | { type: 'message'; payload: { fromUserId: string; toUserId: string; ciphertext: string } }
+  | { type: 'message'; payload: { fromUserId: string; toUserId: string; ciphertext: string; id?: number; createdAt?: Date | string | null } }
   | { type: 'status'; payload: { userId: string; status: 'online' | 'offline' | 'idle' | 'dnd' } };

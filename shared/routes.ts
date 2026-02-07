@@ -128,6 +128,23 @@ export const api = {
       },
     },
   },
+  messages: {
+    history: {
+      method: "GET" as const,
+      path: "/api/messages/:friendId",
+      responses: {
+        200: z.array(
+          z.object({
+            id: z.number(),
+            fromUserId: z.string().uuid(),
+            toUserId: z.string().uuid(),
+            content: z.string(),
+            createdAt: z.string().or(z.date()).nullable(),
+          })
+        ),
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

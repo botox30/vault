@@ -203,6 +203,12 @@ export async function registerRoutes(
     );
   });
 
+  app.get(api.messages.history.path, requireAuth, async (req, res) => {
+    const friendId = String(req.params.friendId);
+    const messages = await storage.getMessageHistory(req.userId!, friendId);
+    res.json(messages);
+  });
+
   // === WebSocket Server ===
   const wss = new WebSocketServer({ noServer: true, path: "/ws" });
   const clients = new Map<string, WebSocket>();
@@ -270,6 +276,8 @@ export async function registerRoutes(
             return; // Drop message if not friends
           }
 
+          const savedMessage = await storage.saveMessage(userId, toUserId, ciphertext);
+
           const recipientSocket = clients.get(toUserId);
           if (recipientSocket && recipientSocket.readyState === WebSocket.OPEN) {
             recipientSocket.send(JSON.stringify({
@@ -278,6 +286,8 @@ export async function registerRoutes(
                 fromUserId: userId,
                 toUserId,
                 ciphertext,
+                id: savedMessage.id,
+                createdAt: savedMessage.createdAt,
               }
             }));
           }
@@ -289,6 +299,8 @@ export async function registerRoutes(
               fromUserId: userId,
               toUserId,
               ciphertext,
+              id: savedMessage.id,
+              createdAt: savedMessage.createdAt,
             }
           }));
         }
