@@ -1,0 +1,117 @@
+MVP PROJEKTU: VAULT
+CEL
+
+Stworzyć anonimowy komunikator webowy z kontami użytkowników, listą znajomych, requestami oraz czatem w czasie rzeczywistym.
+
+STACK
+
+Backend: Node.js, Express, PostgreSQL, WebSocket
+Frontend: React (Vite), CSS (dark theme, styl Discord)
+Auth: JWT
+Komunikacja realtime: WebSocket
+
+AUTORYZACJA
+
+Użytkownik może się zarejestrować podając email, username i hasło.
+
+Username musi być unikalny w całym systemie.
+
+Hasło jest hashowane bcryptem.
+
+Po rejestracji i logowaniu backend zwraca JWT.
+
+JWT jest zapisywany w localStorage.
+
+Wszystkie endpointy (poza login/register) wymagają JWT w Authorization: Bearer.
+
+UŻYTKOWNICY
+
+Każdy użytkownik ma: id (UUID), email, username.
+
+Backend udostępnia endpoint wyszukiwania użytkownika po username.
+
+Frontend nigdy nie używa UUID w UI – tylko username.
+
+ZNAJOMI (FRIENDS)
+
+Użytkownik może dodać znajomego wpisując username w polu „Add friend”.
+
+Wysłanie zaproszenia tworzy friend request.
+
+Drugi użytkownik widzi zaproszenie w sekcji Requests.
+
+Użytkownik może zaakceptować zaproszenie.
+
+Po zaakceptowaniu:
+
+relacja znajomych zapisywana jest w DWIE STRONY w bazie,
+
+request jest usuwany.
+
+Obaj użytkownicy widzą się w sekcji Friends.
+
+CHAT
+
+Kliknięcie znajomego w sidebarze otwiera czat.
+
+Wiadomości są wysyłane przez WebSocket.
+
+Wiadomość zawiera: fromUserId, toUserId, ciphertext.
+
+Backend przekazuje wiadomość tylko jeśli użytkownicy są znajomymi.
+
+Frontend renderuje wiadomości w czasie rzeczywistym.
+
+MVP nie wymaga historii wiadomości (tylko realtime).
+
+UI (FRONTEND)
+
+Dark theme inspirowany Discordem.
+
+Lewy sidebar:
+
+input „Add friend by username”,
+
+lista Friends,
+
+lista Requests.
+
+Środkowy panel:
+
+chat z wybranym użytkownikiem,
+
+input na wiadomość.
+
+Brak hardcode’ów użytkowników w frontendzie.
+
+Cały stan aplikacji trzymany w App.jsx.
+
+WEBSOCKET
+
+Po zalogowaniu frontend łączy się z WebSocketem używając JWT.
+
+Backend autoryzuje połączenie WS na podstawie JWT.
+
+Każdy user ma jedno aktywne połączenie WS.
+
+Backend mapuje userId -> ws.
+
+BEZPIECZEŃSTWO (MVP)
+
+Brak publicznych endpointów bez JWT.
+
+Brak możliwości wysyłania wiadomości do nieznajomych.
+
+Brak możliwości dodania samego siebie jako znajomego.
+
+Signal Protocol / E2EE
+
+Historia wiadomości
+
+Unread badges
+
+Notatki do siebie
+
+Push notifications
+
+Profile, avatary, statusy
