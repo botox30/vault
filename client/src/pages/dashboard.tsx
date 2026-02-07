@@ -27,12 +27,12 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const { user } = useAuth();
   const { friends, requests, sendRequest, acceptRequest, rejectRequest } = useFriends();
-  const { messages, sendMessage, connected } = useChat();
+  const { messages, sendMessage, connected, loadHistory } = useChat();
   
-  const [selectedFriendId, setSelectedFriendId] = useState<number | null>(null);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [addFriendInput, setAddFriendInput] = useState("");
-  const [activeTab, setActiveTab] = useState<"friends" | "pending">("friends");
+  const [activeTab, setActiveTab] = useState<"dms" | "friends">("dms");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -59,13 +59,18 @@ export default function Dashboard() {
     setAddFriendInput("");
   };
 
+  const handleSelectFriend = (friendId: string) => {
+    setSelectedFriendId(friendId);
+    loadHistory(friendId);
+  };
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Navigation Sidebar */}
       <Sidebar />
 
-      {/* Friends & Channels List */}
-      <div className="w-80 bg-[#2B2D31] flex flex-col border-r border-black/10">
+        {/* Friends & Channels List */}
+        <div className="w-80 bg-[#2B2D31] flex flex-col border-r border-black/20">
         {/* Header Search */}
         <div className="h-12 shadow-sm flex items-center px-4 border-b border-black/20">
           <Button 
@@ -80,26 +85,26 @@ export default function Dashboard() {
         {/* Tab Selection */}
         <div className="p-4 pb-2">
           <div className="flex items-center justify-between mb-4">
-             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Direct Messages</h2>
-             <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
-               <UserPlus className="h-4 w-4" />
-             </Button>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Direct Messages</h2>
+            <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-foreground">
+              <UserPlus className="h-4 w-4" />
+            </Button>
           </div>
           
           <div className="space-y-1">
              <Button 
-               variant={activeTab === "friends" ? "secondary" : "ghost"} 
+               variant={activeTab === "dms" ? "secondary" : "ghost"} 
                className="w-full justify-start mb-1"
-               onClick={() => setActiveTab("friends")}
+               onClick={() => setActiveTab("dms")}
              >
                <Users className="mr-2 h-4 w-4" />
-               Friends
+               DMs
              </Button>
              <div className="relative">
                 <Button 
-                  variant={activeTab === "pending" ? "secondary" : "ghost"} 
+                  variant={activeTab === "friends" ? "secondary" : "ghost"} 
                   className="w-full justify-start"
-                  onClick={() => setActiveTab("pending")}
+                  onClick={() => setActiveTab("friends")}
                 >
                   <div className="mr-2 relative">
                     <UserPlus className="h-4 w-4" />
@@ -122,7 +127,7 @@ export default function Dashboard() {
 
         {/* List Content */}
         <ScrollArea className="flex-1 px-2">
-          {activeTab === "friends" ? (
+          {activeTab === "dms" ? (
             <div className="space-y-1 p-2">
               {friends.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
@@ -133,7 +138,7 @@ export default function Dashboard() {
                 friends.map((f) => (
                   <button
                     key={f.id}
-                    onClick={() => setSelectedFriendId(f.friend.id)}
+                    onClick={() => handleSelectFriend(f.friend.id)}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all group",
                       selectedFriendId === f.friend.id 
@@ -149,7 +154,12 @@ export default function Dashboard() {
                       </Avatar>
                       <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#2B2D31]" />
                     </div>
-                    <span className="font-medium truncate">{f.friend.username}</span>
+                    <div className="min-w-0 text-left">
+                      <span className="font-medium truncate block">{f.friend.username}</span>
+                      <span className="text-[11px] text-muted-foreground/80 truncate block">
+                        {messages[f.friend.id]?.slice(-1)[0]?.text || "Start a conversation"}
+                      </span>
+                    </div>
                   </button>
                 ))
               )}
@@ -179,7 +189,7 @@ export default function Dashboard() {
 
               {/* Pending Requests List */}
               <div className="space-y-2">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase">Pending - {requests.length}</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase">Requests - {requests.length}</h3>
                 {requests.map((req) => (
                   <div key={req.id} className="flex items-center justify-between bg-black/10 p-2 rounded-md border border-white/5 hover:border-white/10 transition-colors">
                     <div className="flex items-center gap-2">
@@ -210,6 +220,29 @@ export default function Dashboard() {
                 ))}
                 {requests.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">No pending requests</p>
+                )}
+              </div>
+
+              <Separator className="bg-white/5 my-2" />
+
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase">Friends</h3>
+                {friends.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">No friends yet</p>
+                ) : (
+                  friends.map((friend) => (
+                    <div key={friend.id} className="flex items-center gap-3 rounded-md bg-black/10 px-3 py-2 border border-white/5">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">
+                          {friend.friend.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{friend.friend.username}</p>
+                        <p className="text-[11px] text-muted-foreground">Friend</p>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>

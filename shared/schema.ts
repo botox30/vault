@@ -1,11 +1,11 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, uuid, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // === TABLE DEFINITIONS ===
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
   email: text("email"),
@@ -17,24 +17,24 @@ export const users = pgTable("users", {
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  fromUserId: integer("from_user_id").notNull(),
-  toUserId: integer("to_user_id").notNull(),
+  fromUserId: uuid("from_user_id").notNull(),
+  toUserId: uuid("to_user_id").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const friendRequests = pgTable("friend_requests", {
   id: serial("id").primaryKey(),
-  fromUserId: integer("from_user_id").notNull(),
-  toUserId: integer("to_user_id").notNull(),
+  fromUserId: uuid("from_user_id").notNull(),
+  toUserId: uuid("to_user_id").notNull(),
   status: text("status").notNull().default("pending"), // pending, accepted, rejected
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const friends = pgTable("friends", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  friendId: integer("friend_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  friendId: uuid("friend_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -75,7 +75,7 @@ export type FriendRequest = typeof friendRequests.$inferSelect;
 export type Friend = typeof friends.$inferSelect;
 
 export type UserResponse = {
-  id: number;
+  id: string;
   username: string;
   email: string | null;
   avatarUrl: string | null;
@@ -87,5 +87,5 @@ export type MessageResponse = Message;
 
 // WebSocket message types
 export type WSMessage = 
-  | { type: 'message'; payload: { fromUserId: number; toUserId: number; text: string; id: number; createdAt: Date } }
-  | { type: 'status'; payload: { userId: number; status: 'online' | 'offline' | 'idle' | 'dnd' } };
+  | { type: 'message'; payload: { fromUserId: string; toUserId: string; ciphertext: string; id?: number; createdAt?: Date | string | null } }
+  | { type: 'status'; payload: { userId: string; status: 'online' | 'offline' | 'idle' | 'dnd' } };

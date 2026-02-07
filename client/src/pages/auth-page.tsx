@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Lock } from "lucide-react";
 import { motion } from "framer-motion";
-import { insertUserSchema } from "@shared/schema";
 
 export default function AuthPage() {
   const { login, register } = useAuth();
@@ -35,6 +34,10 @@ export default function AuthPage() {
     if (activeTab === "login") {
       login.mutate({ username: values.username, password: values.password });
     } else {
+      if (!values.email) {
+        form.setError("email", { message: "Email is required" });
+        return;
+      }
       register.mutate(values);
     }
   };

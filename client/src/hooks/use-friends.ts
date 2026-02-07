@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthHeader } from "@/lib/auth";
 
 export function useFriends() {
   const queryClient = useQueryClient();
@@ -9,7 +10,7 @@ export function useFriends() {
   const friendsQuery = useQuery({
     queryKey: [api.friends.list.path],
     queryFn: async () => {
-      const res = await fetch(api.friends.list.path, { credentials: "include" });
+      const res = await fetch(api.friends.list.path, { headers: getAuthHeader() });
       if (!res.ok) throw new Error("Failed to fetch friends");
       return api.friends.list.responses[200].parse(await res.json());
     },
@@ -18,7 +19,7 @@ export function useFriends() {
   const requestsQuery = useQuery({
     queryKey: [api.friends.requests.path],
     queryFn: async () => {
-      const res = await fetch(api.friends.requests.path, { credentials: "include" });
+      const res = await fetch(api.friends.requests.path, { headers: getAuthHeader() });
       if (!res.ok) throw new Error("Failed to fetch requests");
       return api.friends.requests.responses[200].parse(await res.json());
     },
@@ -28,9 +29,8 @@ export function useFriends() {
     mutationFn: async (username: string) => {
       const res = await fetch(api.friends.request.path, {
         method: api.friends.request.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({ username }),
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -55,7 +55,7 @@ export function useFriends() {
   const acceptRequestMutation = useMutation({
     mutationFn: async (requestId: number) => {
       const url = buildUrl(api.friends.accept.path, { id: requestId });
-      const res = await fetch(url, { method: "POST", credentials: "include" });
+      const res = await fetch(url, { method: "POST", headers: getAuthHeader() });
       if (!res.ok) throw new Error("Failed to accept request");
       return api.friends.accept.responses[200].parse(await res.json());
     },
@@ -69,7 +69,7 @@ export function useFriends() {
   const rejectRequestMutation = useMutation({
     mutationFn: async (requestId: number) => {
       const url = buildUrl(api.friends.reject.path, { id: requestId });
-      const res = await fetch(url, { method: "POST", credentials: "include" });
+      const res = await fetch(url, { method: "POST", headers: getAuthHeader() });
       if (!res.ok) throw new Error("Failed to reject request");
       return api.friends.reject.responses[200].parse(await res.json());
     },
